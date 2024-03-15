@@ -1,5 +1,6 @@
 package com.atypon.nosql.affinitynode.crud;
 
+import com.atypon.nosql.affinitynode.broadcast.BroadCast;
 import com.atypon.nosql.affinitynode.indexing.HashIndexing;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,11 +25,13 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
     private ObjectMapper objectMapper;
     private HashIndexing hashIndexing;
+    private BroadCast broadCast;
 
     @Autowired
-    public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing) {
+    public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing, BroadCast broadCast) {
         this.objectMapper = objectMapper;
         this.hashIndexing = hashIndexing;
+        this.broadCast = broadCast;
         hashIndexing.loadIndexes();
     }
 
@@ -36,9 +39,9 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     public ResponseEntity<String> createDB(String dbName) {
         String dbFolderPath = DATABASE_FOLDER_PATH + dbName;
         File dbFolder = new File(dbFolderPath);
-        System.out.println(dbFolderPath);
         if (!dbFolder.exists()) {
             if (dbFolder.mkdir()) {
+                broadCast.broadcast();
                 return ResponseEntity.status(HttpStatus.OK).body("Database '" + dbName + "' created successfully.");
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to create database folder '" + dbName + "'.");
@@ -70,6 +73,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                     }
                     hashIndexing.addToIndex(documentName, uniqueId, jsonFileName);
                     hashIndexing.persistIndexes();
+                    broadCast.broadcast();
                     return ResponseEntity.status(HttpStatus.OK).body("Document folder '" + documentName + "' and JSON object created as '" + jsonFileName + "' successfully.");
                 } else {
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to create document folder '" + documentName + "'.");
@@ -87,6 +91,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                 }
                 hashIndexing.addToIndex(documentName, uniqueId, jsonFileName);
                 hashIndexing.persistIndexes();
+                broadCast.broadcast();
                 return ResponseEntity.status(HttpStatus.OK).body("JSON object created as '" + jsonFileName + "' successfully in document folder '" + documentName + "'.");
             }
         } catch (IOException e) {
@@ -164,6 +169,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+                broadCast.broadcast();
                 return ResponseEntity.status(HttpStatus.OK).body("Document with ID '" + id + "' updated successfully for document '" + documentName + "'.");
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("JSON file '" + fileName + "' not found for document '" + documentName + "'.");
@@ -188,6 +194,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                 }
             }
             if (dbFolder.delete()) {
+                broadCast.broadcast();
                 return ResponseEntity.status(HttpStatus.OK).body("Database '" + dbName + "' deleted successfully.");
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to delete database folder '" + dbName + "'.");
@@ -208,6 +215,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
             if (deleteFolder(documentFolder)) {
                 hashIndexing.getIndexes().remove(documentName);
                 hashIndexing.persistIndexes();
+                broadCast.broadcast();
                 return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' deleted successfully.");
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to delete document '" + documentName + "'.");
@@ -230,6 +238,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                 if (jsonFile.delete()) {
                     index.remove(id);
                     hashIndexing.persistIndexes();
+                    broadCast.broadcast();
                     return ResponseEntity.status(HttpStatus.OK).body("JSON file '" + fileName + "' deleted successfully for document '" + documentName + "'.");
                 } else {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete JSON file '" + fileName + "' for document '" + documentName + "'.");
