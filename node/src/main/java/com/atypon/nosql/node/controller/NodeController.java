@@ -1,30 +1,29 @@
-package com.atypon.nosql.affinitynode.controller;
+package com.atypon.nosql.node.controller;
 
-import com.atypon.nosql.affinitynode.crud.DataBaseCRUD;
+import com.atypon.nosql.node.crud.DataBaseCRUD;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-public class AffinityNodeController {
+public class NodeController {
 
-    DataBaseCRUD dataBaseCRUD;
+    private DataBaseCRUD dataBaseCRUD;
 
     @Autowired
-    public AffinityNodeController(DataBaseCRUD dataBaseCRUD) {
+    public void NodeController(DataBaseCRUD dataBaseCRUD) {
         this.dataBaseCRUD = dataBaseCRUD;
+        loadIndexes();
+    }
+
+    @PostMapping("/loadIndexes")
+    private void loadIndexes() {
+        dataBaseCRUD.loadIndexes();
     }
 
     @PostMapping("/create-db/{dbName}")
     public ResponseEntity<String> createDB(@PathVariable String dbName) {
         return dataBaseCRUD.createDB(dbName);
-    }
-
-    @PostMapping("/add-document/{dbName}/{documentName}")
-    public ResponseEntity<String> addDocument(@PathVariable String documentName,
-                                              @PathVariable String dbName,
-                                              @RequestBody String documentContent) {
-        return dataBaseCRUD.addDocument(documentName, dbName, documentContent);
     }
 
     @GetMapping("/get/{dbName}/{documentName}/{id}")
@@ -38,6 +37,13 @@ public class AffinityNodeController {
     public ResponseEntity<String> getDocument(@PathVariable String dbName,
                                               @PathVariable String documentName) {
         return dataBaseCRUD.getDocument(dbName, documentName);
+    }
+
+    @PostMapping("/add-document/{dbName}/{documentName}")
+    public ResponseEntity<String> addDocument(@PathVariable String dbName,
+                                              @PathVariable String documentName,
+                                              @RequestBody String documentContent) {
+        return dataBaseCRUD.addDocument(dbName, documentName, documentContent);
     }
 
     @PutMapping("/update/{dbName}/{documentName}/{id}")
@@ -65,7 +71,7 @@ public class AffinityNodeController {
                                                      @PathVariable String id) {
         return dataBaseCRUD.deleteDocumentById(dbName, documentName, id);
     }
-}
 
+}
 
 
