@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 public class NodeController {
 
@@ -13,12 +15,11 @@ public class NodeController {
     @Autowired
     public void NodeController(DataBaseCRUD dataBaseCRUD) {
         this.dataBaseCRUD = dataBaseCRUD;
-        loadIndexes();
     }
 
     @PostMapping("/loadIndexes")
-    private void loadIndexes() {
-        dataBaseCRUD.loadIndexes();
+    private void loadIndexes(@RequestBody Map<String, Map<String, String>> indexes) {
+        dataBaseCRUD.loadIndexes(indexes);
     }
 
     @PostMapping("/create-db/{dbName}")

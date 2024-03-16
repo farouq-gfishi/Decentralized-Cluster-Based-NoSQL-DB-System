@@ -7,7 +7,10 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,12 +27,40 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing) {
         this.objectMapper = objectMapper;
         this.hashIndexing = hashIndexing;
-        hashIndexing.loadIndexes();
+        loadIndexesFromFile();
     }
 
     @Override
-    public void loadIndexes() {
-        hashIndexing.loadIndexes();
+    public void loadIndexes(Map<String, Map<String, String>> indexes) {
+        hashIndexing.setIndexes(indexes);
+    }
+
+    public void loadIndexesFromFile() {
+        try {
+            File indexFile = new File(DATABASE_FOLDER_PATH + "/index.txt");
+            if (!indexFile.exists()) {
+                if (indexFile.createNewFile()) {
+                    System.out.println("index.txt file created successfully.");
+                } else {
+                    System.err.println("Failed to create index.txt file.");
+                    return;
+                }
+            }
+            try (BufferedReader reader = new BufferedReader(new FileReader(indexFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",");
+                    String documentName = parts[0];
+                    String docId = parts[1];
+                    String fileName = parts[2];
+                    hashIndexing.getIndexes().computeIfAbsent(documentName, k -> new HashMap<>()).put(docId, fileName);
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to load indexes from file: " + e.getMessage());
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to create index.txt file: " + e.getMessage());
+        }
     }
 
     @Override
@@ -42,7 +73,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> getDocumentById(String dbName, String documentName, String id) {
-        Map<String, String> index = hashIndexing.getIndexes().get(documentName);
+        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         if (index == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
         }
@@ -65,10 +96,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> getDocument(String dbName, String documentName) {
-        if (dbName == null || dbName.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No database selected. Please use the '/use' endpoint to select a database first.");
-        }
-        Map<String, String> index = hashIndexing.getIndexes().get(documentName);
+        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         if (index == null || index.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
         }

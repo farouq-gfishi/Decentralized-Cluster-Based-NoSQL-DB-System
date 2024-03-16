@@ -60,12 +60,12 @@ public class HashIndexing {
         }
     }
 
-    public void createIndexMap(String documentName) {
-        indexes.put(documentName, new HashMap<>());
+    public void createIndexMap(String dbName, String documentName) {
+        indexes.put(dbName + "-" + documentName, new HashMap<>());
     }
 
-    public void addToIndex(String documentName, String docId, String fileName) {
-        Map<String, String> index = indexes.get(documentName);
+    public void addToIndex(String dbName, String documentName, String docId, String fileName) {
+        Map<String, String> index = indexes.get(dbName + "-" +documentName);
         index.put(docId, fileName);
     }
 
