@@ -17,11 +17,6 @@ public class NodeController {
         this.dataBaseCRUD = dataBaseCRUD;
     }
 
-    @PostMapping("/loadIndexes")
-    private void loadIndexes(@RequestBody Map<String, Map<String, String>> indexes) {
-        dataBaseCRUD.loadIndexes(indexes);
-    }
-
     @PostMapping("/create-db/{dbName}")
     public ResponseEntity<String> createDB(@PathVariable String dbName) {
         return dataBaseCRUD.createDB(dbName);

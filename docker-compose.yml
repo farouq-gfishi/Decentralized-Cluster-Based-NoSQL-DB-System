@@ -8,7 +8,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - db-storage:/app/DataBase
+      - node-storage:/app/DataBase
 
   node2:
     build: ./node
@@ -18,7 +18,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - db-storage:/app/DataBase
+      - node-storage:/app/DataBase
 
   node3:
     build: ./node
@@ -28,7 +28,8 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - db-storage:/app/DataBase
+      - node-storage:/app/DataBase
+
 
 
   affinity-node:
@@ -39,12 +40,18 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - db-storage:/app/DataBase
+      - affinity-node-storage:/app/DataBase
 
 volumes:
-  db-storage:
+  affinity-node-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ./affinity-node/src/main/java/com/atypon/nosql/affinitynode/DataBase
+  node-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./node/src/main/java/com/atypon/nosql/node/DataBase

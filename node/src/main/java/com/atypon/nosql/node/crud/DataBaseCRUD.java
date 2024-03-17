@@ -6,7 +6,6 @@ import java.util.Map;
 
 public interface DataBaseCRUD {
 
-    void loadIndexes(Map<String, Map<String, String>> indexes);
 
     ResponseEntity<String> createDB(String dbName);
 
