@@ -8,7 +8,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - node-storage:/app/DataBase
+      - node1-storage:/app/DataBase
 
   node2:
     build: ./node
@@ -18,7 +18,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - node-storage:/app/DataBase
+      - node2-storage:/app/DataBase
 
   node3:
     build: ./node
@@ -28,9 +28,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
-      - node-storage:/app/DataBase
-
-
+      - node3-storage:/app/DataBase
 
   affinity-node:
     build: ./affinity-node
@@ -42,16 +40,44 @@ services:
     volumes:
       - affinity-node-storage:/app/DataBase
 
+  bootstrapping-node:
+    build: ./bootstrapping-node
+    container_name: bootstrapping-node
+    ports:
+      - "8085:8080"
+    environment:
+      - DATABASE_FOLDER_PATH=/app/DataBase
+    volumes:
+      - bootstrapping-node-storage:/app/DataBase
+
 volumes:
+  bootstrapping-node-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./bootstrapping-node/src/main/java/com/atypon/nosql/bootstrappingnode/DataBase
   affinity-node-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ./affinity-node/src/main/java/com/atypon/nosql/affinitynode/DataBase
-  node-storage:
+  node1-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./node/src/main/java/com/atypon/nosql/node/DataBase
+      device: ./node/src/main/java/com/atypon/nosql/node/DataBase/node1
+  node2-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./node/src/main/java/com/atypon/nosql/node/DataBase/node2
+  node3-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./node/src/main/java/com/atypon/nosql/node/DataBase/node3
