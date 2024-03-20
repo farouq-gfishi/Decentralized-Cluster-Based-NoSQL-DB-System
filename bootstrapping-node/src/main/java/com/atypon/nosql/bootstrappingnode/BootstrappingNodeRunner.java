@@ -1,6 +1,6 @@
-package com.atypon.nosql.bootstrappingnode.controller;
+package com.atypon.nosql.bootstrappingnode;
 
-import com.atypon.nosql.bootstrappingnode.BootstrappingNode;
+import com.atypon.nosql.bootstrappingnode.service.BootstrappingNodeService;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class BootstrappingNodeRunner implements ApplicationRunner {
 
-    private final BootstrappingNode bootstrappingNode;
+    private final BootstrappingNodeService bootstrappingNode;
 
-    public BootstrappingNodeRunner(BootstrappingNode bootstrappingNode) {
+    public BootstrappingNodeRunner(BootstrappingNodeService bootstrappingNode) {
         this.bootstrappingNode = bootstrappingNode;
     }
 

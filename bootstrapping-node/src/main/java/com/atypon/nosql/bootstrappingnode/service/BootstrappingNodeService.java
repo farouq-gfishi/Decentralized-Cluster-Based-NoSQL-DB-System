@@ -1,19 +1,32 @@
-package com.atypon.nosql.bootstrappingnode;
+package com.atypon.nosql.bootstrappingnode.service;
 
 import com.atypon.nosql.bootstrappingnode.entity.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
-public class BootstrappingNode {
+public class BootstrappingNodeService {
+
+    private static int currentNodeIndex = 0;
+    private static List<String> nodes = List.of(
+            "http://node1:8080/user/assign-user",
+            "http://node2:8080/user/assign-user",
+            "http://node3:8080/user/assign-user",
+            "http://affinity-node:8080/user/assign-user"
+    );
 
     private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/user";
 
@@ -23,28 +36,14 @@ public class BootstrappingNode {
     }
 
     private void distributeUser() {
-        List<String>nodes = List.of(
-                "http://node1:8080/user/assign-user",
-                "http://node2:8080/user/assign-user",
-                "http://node3:8080/user/assign-user",
-                "http://affinity-node:8080/user/assign-user"
-        );
-        List<User>users = readUsersFromJsonFiles();
-        int numNodes = nodes.size();
-        int numUsers = users.size();
-        int usersPerNode = numUsers / numNodes;
-        int remainingUsers = numUsers % numNodes;
-        int userIndex = 0;
-        for (String node : nodes) {
-            int usersToSend = usersPerNode + (remainingUsers-- > 0 ? 1 : 0);
-            for (int i = 0; i < usersToSend; i++) {
-                User user = users.get(userIndex++);
-                assignUserToNode(user, node);
-            }
+        List<User>users = getAllUsers();
+        for(User user:users) {
+            assignUserToNode(user, nodes.get(currentNodeIndex));
+            currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
         }
     }
 
-    private List<User> readUsersFromJsonFiles() {
+    public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         File directory = new File(DATABASE_FOLDER_PATH);
         if (directory.exists() && directory.isDirectory()) {
@@ -98,6 +97,21 @@ public class BootstrappingNode {
         }
     }
 
+    public ResponseEntity<String> addUserAndAssignToNode(User user) {
+        try {
+            user.setId(UUID.randomUUID().toString());
+            ObjectMapper objectMapper = new ObjectMapper();
+            String userJson = objectMapper.writeValueAsString(user);
+            String filePath = DATABASE_FOLDER_PATH + "/user_" + user.getId() + ".json";
+            Files.write(Paths.get(filePath), userJson.getBytes());
+            String nodeUrl = nodes.get(currentNodeIndex);
+            assignUserToNode(user, nodeUrl);
+            currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+            return ResponseEntity.status(HttpStatus.OK).body(user.getName() + " assign to node: " + nodeUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error in assign user to node: " + e.getMessage());
+        }
+    }
 
 
 }
