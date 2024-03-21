@@ -1,1 +1,6 @@
-{"id":"69a33fee-7fd2-4b81-ba82-b603a6aeaf70","name":"farooq","password":"123","role":"ADMIN"}
+{
+  "id":"69a33fee-7fd2-4b81-ba82-b603a6aeaf70",
+  "name":"farooq",
+  "password":"{bcrypt}$2a$12$rLjxIg3/iScgEFKL3Aj98.VD6s9Aq5Dj4ir.SooKPGdfQ8fxO2n6O",
+  "role":"ADMIN"
+}
