@@ -48,7 +48,9 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(configurer ->
                 configurer
-                        .requestMatchers(HttpMethod.POST, "/add-user").hasRole("ADMIN"));
+                        .requestMatchers(HttpMethod.GET, "/bootstrapping-node/start-cluster").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/bootstrapping-node/add-user").hasRole("ADMIN")
+        );
         http.httpBasic(Customizer.withDefaults());
         http.csrf(csrf -> csrf.disable());
         return http.build();

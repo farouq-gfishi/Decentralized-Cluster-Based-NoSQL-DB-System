@@ -1,5 +1,8 @@
 package com.atypon.nosql.node.user;
 
+import com.atypon.nosql.node.security.SecurityConfiguration;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +21,12 @@ public class UserController {
 
     private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
 
+    private SecurityConfiguration securityConfiguration;
+
+    @Autowired
+    public UserController(SecurityConfiguration securityConfiguration) {
+        this.securityConfiguration = securityConfiguration;
+    }
 
     @PostMapping("assign-user")
     public ResponseEntity<String> receivedUser(@RequestBody User user) {
@@ -27,11 +36,16 @@ public class UserController {
             if (!documentFolder.exists()) {
                 documentFolder.mkdirs();
             }
-            String userJson = "{\"id\":\"" + user.getId() + "\",\"name\":\"" + user.getName() + "\",\"password\":\"" + user.getPassword() + "\"}";
+            JSONObject userJson = new JSONObject();
+            userJson.put("id", user.getId());
+            userJson.put("name", user.getName());
+            userJson.put("password", user.getPassword());
+            userJson.put("role", user.getRole());
             File userFile = new File(documentFolder, user.getId() + ".json");
-            FileWriter writer = new FileWriter(userFile);
-            writer.write(userJson);
-            writer.close();
+            try (FileWriter writer = new FileWriter(userFile)) {
+                writer.write(userJson.toString(4));
+            }
+            securityConfiguration.addUserToMemory(user);
             return ResponseEntity.status(HttpStatus.OK).body("User assigned successfully with ID: " + user.getId());
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error assigning user: " + e.getMessage());

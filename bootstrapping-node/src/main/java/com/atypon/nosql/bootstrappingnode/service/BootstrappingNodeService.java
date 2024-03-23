@@ -3,6 +3,8 @@ package com.atypon.nosql.bootstrappingnode.service;
 import com.atypon.nosql.bootstrappingnode.entity.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -10,11 +12,13 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,16 +51,7 @@ public class BootstrappingNodeService {
 
     private void assignUserToNode(User user, String nodeUrl) {
         try {
-            URL url = new URL(nodeUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setDoOutput(true);
-            String userJson = "{\"id\":\"" + user.getId() + "\",\"name\":\"" + user.getName() + "\",\"password\":\"" + user.getPassword() + "\"}";
-            try (OutputStream outputStream = connection.getOutputStream()) {
-                byte[] input = userJson.getBytes("utf-8");
-                outputStream.write(input, 0, input.length);
-            }
+            HttpURLConnection connection = getHttpURLConnection(user, nodeUrl);
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 System.out.println("User assigned successfully to node " + nodeUrl);
@@ -67,6 +62,29 @@ public class BootstrappingNodeService {
         } catch (IOException e) {
             System.err.println("Error assigning user to node " + nodeUrl + ": " + e.getMessage());
         }
+    }
+
+    private static HttpURLConnection getHttpURLConnection(User user, String nodeUrl) throws IOException {
+        URL url = new URL(nodeUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        String authString = "admin" + ":" + "admin";
+        String encodedAuthString = Base64.getEncoder().encodeToString(authString.getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + encodedAuthString);
+
+        connection.setDoOutput(true);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", user.getId());
+        jsonObject.put("name", user.getName());
+        jsonObject.put("password", user.getPassword());
+        jsonObject.put("role", user.getRole());
+        try (OutputStream outputStream = connection.getOutputStream();
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8")) {
+            outputStreamWriter.write(jsonObject.toString(4));
+        }
+        return connection;
     }
 
     public ResponseEntity<String> addUserAndAssignToNode(User user) {
