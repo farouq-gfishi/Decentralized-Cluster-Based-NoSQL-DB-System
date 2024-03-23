@@ -3,8 +3,8 @@ package com.atypon.nosql.bootstrappingnode.service;
 import com.atypon.nosql.bootstrappingnode.entity.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -36,6 +36,12 @@ public class BootstrappingNodeService {
 
     private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/user";
 
+    @Value("${app.username}")
+    private String username;
+
+    @Value("${app.password}")
+    private String password;
+
 
     public void startCluster() {
         distributeUser();
@@ -64,13 +70,13 @@ public class BootstrappingNodeService {
         }
     }
 
-    private static HttpURLConnection getHttpURLConnection(User user, String nodeUrl) throws IOException {
+    private HttpURLConnection getHttpURLConnection(User user, String nodeUrl) throws IOException {
         URL url = new URL(nodeUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
 
-        String authString = "admin" + ":" + "admin";
+        String authString = username + ":" + password;
         String encodedAuthString = Base64.getEncoder().encodeToString(authString.getBytes());
         connection.setRequestProperty("Authorization", "Basic " + encodedAuthString);
 

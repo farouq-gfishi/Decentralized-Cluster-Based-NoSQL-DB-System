@@ -130,7 +130,7 @@ public class BroadCast {
         }
     }
 
-    @PostMapping("/broadcast-delete-document-by-id")
+    @PostMapping("/broadcast/delete-document-by-id")
     public void deleteDocumentById(@RequestBody Map<String,String> requestBody) {
         String dbName = requestBody.get("dbName");
         String documentName = requestBody.get("documentName");

@@ -3,6 +3,7 @@ package com.atypon.nosql.node.crud;
 import com.atypon.nosql.node.indexing.HashIndexing;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +19,11 @@ import java.util.*;
 @Service
 public class DataBaseCRUDImpl implements DataBaseCRUD {
     private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
-    private static final String AFFINITY_NODE_URL = "http://affinity-node:8080";
+    private static final String AFFINITY_NODE_URL = "http://affinity-node:8080/api";
+    @Value("${app.username}")
+    private String username;
+    @Value("${app.password}")
+    private String password;
     private ObjectMapper objectMapper;
     private HashIndexing hashIndexing;
 
@@ -152,7 +157,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     private ResponseEntity<String> invokeAffinityNodeEndpoint(HttpMethod method, String endpoint, String requestBody, String successMessage) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBasicAuth(username, password);
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> responseEntity = restTemplate.exchange(endpoint, method, requestEntity, String.class);
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
