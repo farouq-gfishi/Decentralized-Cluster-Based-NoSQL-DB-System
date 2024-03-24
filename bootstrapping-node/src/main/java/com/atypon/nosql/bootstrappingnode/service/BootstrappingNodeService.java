@@ -5,20 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +23,7 @@ import java.util.UUID;
 public class BootstrappingNodeService {
 
     private static int currentNodeIndex = 0;
-    private static List<String> nodes = List.of(
+    private final List<String> nodes = List.of(
             "http://node1:8080/user/assign-user",
             "http://node2:8080/user/assign-user",
             "http://node3:8080/user/assign-user",
@@ -57,43 +53,29 @@ public class BootstrappingNodeService {
 
     private void assignUserToNode(User user, String nodeUrl) {
         try {
-            HttpURLConnection connection = getHttpURLConnection(user, nodeUrl);
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                System.out.println("User assigned successfully to node " + nodeUrl);
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBasicAuth(username, password);
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("id", user.getId());
+            jsonObject.put("name", user.getName());
+            jsonObject.put("password", user.getPassword());
+            jsonObject.put("role", user.getRole());
+            HttpEntity<String> request = new HttpEntity<>(jsonObject.toString(4), headers);
+            ResponseEntity<String> responseEntity = restTemplate.exchange(nodeUrl, HttpMethod.POST, request, String.class);
+            if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                System.out.println(user.getName() + " assigned successfully to node " + nodeUrl);
             } else {
-                System.err.println("Error assigning user to node " + nodeUrl + ": HTTP error code " + responseCode);
+                System.err.println("Error assigning " + user.getName() + " to node " + nodeUrl + ": HTTP error code " + responseEntity.getStatusCodeValue());
             }
-            connection.disconnect();
-        } catch (IOException e) {
-            System.err.println("Error assigning user to node " + nodeUrl + ": " + e.getMessage());
+        } catch (Exception  e) {
+            System.err.println("Error assigning " + user.getName() + " to node " + nodeUrl + ": " + e.getMessage());
         }
     }
 
-    private HttpURLConnection getHttpURLConnection(User user, String nodeUrl) throws IOException {
-        URL url = new URL(nodeUrl);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
 
-        String authString = username + ":" + password;
-        String encodedAuthString = Base64.getEncoder().encodeToString(authString.getBytes());
-        connection.setRequestProperty("Authorization", "Basic " + encodedAuthString);
-
-        connection.setDoOutput(true);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("id", user.getId());
-        jsonObject.put("name", user.getName());
-        jsonObject.put("password", user.getPassword());
-        jsonObject.put("role", user.getRole());
-        try (OutputStream outputStream = connection.getOutputStream();
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8")) {
-            outputStreamWriter.write(jsonObject.toString(4));
-        }
-        return connection;
-    }
-
-    public ResponseEntity<String> addUserAndAssignToNode(User user) {
+    public ResponseEntity<String> addNewUser(User user) {
         try {
             user.setId(UUID.randomUUID().toString());
             String hashedPassword = new BCryptPasswordEncoder().encode(user.getPassword());

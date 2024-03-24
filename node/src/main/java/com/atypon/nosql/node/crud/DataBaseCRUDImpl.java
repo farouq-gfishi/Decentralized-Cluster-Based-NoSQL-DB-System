@@ -18,10 +18,12 @@ import java.util.*;
 
 @Service
 public class DataBaseCRUDImpl implements DataBaseCRUD {
-    private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
-    private static final String AFFINITY_NODE_URL = "http://affinity-node:8080/api";
+    private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
+    private final String AFFINITY_NODE_URL = "http://affinity-node:8080/api";
+
     @Value("${app.username}")
     private String username;
+
     @Value("${app.password}")
     private String password;
     private ObjectMapper objectMapper;
@@ -60,14 +62,6 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
         } catch (IOException e) {
             System.err.println("Failed to create index.txt file: " + e.getMessage());
         }
-    }
-
-    @Override
-    public ResponseEntity<String> createDB(String dbName) {
-        String affinityNodeEndpoint = AFFINITY_NODE_URL + "/create-db/" + dbName;
-        return invokeAffinityNodeEndpoint(HttpMethod.POST,
-                affinityNodeEndpoint, null,
-                "Database '" + dbName + "' created successfully.");
     }
 
     @Override
@@ -115,12 +109,22 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     }
 
     @Override
+    public ResponseEntity<String> createDB(String dbName) {
+        String affinityNodeEndpoint = AFFINITY_NODE_URL + "/create-db/" + dbName;
+        return invokeAffinityNodeEndpoint(HttpMethod.POST,
+                affinityNodeEndpoint, null,
+                "Database '" + dbName + "' created successfully.");
+    }
+
+    @Override
     public ResponseEntity<String> addDocument(String dbName, String documentName, String documentContent) {
         String affinityNodeEndpoint = AFFINITY_NODE_URL + "/add-document/" + dbName + "/" + documentName;
         return invokeAffinityNodeEndpoint(HttpMethod.POST,
                 affinityNodeEndpoint, documentContent,
                 "Document '" + documentName + "' added successfully.");
     }
+
+
 
     @Override
     public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent) {

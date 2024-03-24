@@ -12,11 +12,13 @@ import java.util.Map;
 @Service
 public class BroadCast {
 
-    private static final String WORKER_NODE_1 = "http://node1:8080";
-    private static final String WORKER_NODE_2 = "http://node2:8080";
-    private static final String WORKER_NODE_3 = "http://node3:8080";
+    private final String WORKER_NODE_1 = "http://node1:8080/broadcast";
+    private final String WORKER_NODE_2 = "http://node2:8080/broadcast";
+    private final String WORKER_NODE_3 = "http://node3:8080/broadcast";
+
     @Value("${app.username}")
     private String username;
+
     @Value("${app.password}")
     private String password;
     private RestTemplate restTemplate;
@@ -30,7 +32,7 @@ public class BroadCast {
 
     public void createDB(String dbName) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/broadcast/create-db";
+        String endpoint = "/create-db";
         sendRequest(WORKER_NODE_1 + endpoint, dbName);
         sendRequest(WORKER_NODE_2 + endpoint, dbName);
         sendRequest(WORKER_NODE_3 + endpoint, dbName);
@@ -38,7 +40,7 @@ public class BroadCast {
 
     public void addDocument(String dbName, String documentName, String documentContent, String uniqueId) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/broadcast/add-document";
+        String endpoint = "/add-document";
         sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName, documentContent, uniqueId);
         sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName, documentContent, uniqueId);
         sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName, documentContent, uniqueId);
@@ -46,7 +48,7 @@ public class BroadCast {
 
     public void updateDocument(String dbName, String documentName, String documentContent, String uniqueId) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/broadcast/update-document";
+        String endpoint = "/update-document";
         sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName, documentContent, uniqueId);
         sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName, documentContent, uniqueId);
         sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName, documentContent, uniqueId);
@@ -54,7 +56,7 @@ public class BroadCast {
 
     public void deleteDb(String dbName) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/broadcast/delete-db";
+        String endpoint = "/delete-db";
         sendRequest(WORKER_NODE_1 + endpoint, dbName);
         sendRequest(WORKER_NODE_2 + endpoint, dbName);
         sendRequest(WORKER_NODE_3 + endpoint, dbName);
@@ -62,7 +64,7 @@ public class BroadCast {
 
     public void deleteDocument(String dbName, String documentName) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/broadcast/delete-document";
+        String endpoint = "/delete-document";
         sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName);
         sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName);
         sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName);
@@ -70,7 +72,7 @@ public class BroadCast {
 
     public void deleteDocumentById(String dbName, String documentName, String id) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/broadcast/delete-document-by-id";
+        String endpoint = "/delete-document-by-id";
         sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName, id);
         sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName, id);
         sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName, id);
@@ -100,13 +102,7 @@ public class BroadCast {
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("dbName", dbName);
             requestBody.put("documentName", documentName);
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody,headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, requestEntity, String.class);
-            if (response.getStatusCode() == HttpStatus.OK) {
-                System.out.println("Request successful to: " + endpoint);
-            } else {
-                System.err.println("Failed to send request to: " + endpoint);
-            }
+            printRequestStatus(endpoint, headers, requestBody);
         } catch (Exception e) {
             System.err.println("Error sending request to: " + endpoint);
             e.printStackTrace();
@@ -122,13 +118,7 @@ public class BroadCast {
             requestBody.put("documentName", documentName);
             requestBody.put("uniqueId", uniqueId);
             requestBody.put("documentContent", documentContent);
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody,headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, requestEntity, String.class);
-            if (response.getStatusCode() == HttpStatus.OK) {
-                System.out.println("Request successful to: " + endpoint);
-            } else {
-                System.err.println("Failed to send request to: " + endpoint);
-            }
+            printRequestStatus(endpoint, headers, requestBody);
         } catch (Exception e) {
             System.err.println("Error sending request to: " + endpoint);
             e.printStackTrace();
@@ -143,16 +133,20 @@ public class BroadCast {
             requestBody.put("dbName", dbName);
             requestBody.put("documentName", documentName);
             requestBody.put("id", id);
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, requestEntity, String.class);
-            if (response.getStatusCode() == HttpStatus.OK) {
-                System.out.println("Request successful to: " + endpoint);
-            } else {
-                System.err.println("Failed to send request to: " + endpoint);
-            }
+            printRequestStatus(endpoint, headers, requestBody);
         } catch (Exception e) {
             System.err.println("Error sending request to: " + endpoint);
             e.printStackTrace();
+        }
+    }
+
+    private void printRequestStatus(String endpoint, HttpHeaders headers, Map<String, String> requestBody) {
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody,headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(endpoint, requestEntity, String.class);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            System.out.println("Request successful to: " + endpoint);
+        } else {
+            System.err.println("Failed to send request to: " + endpoint);
         }
     }
 }
