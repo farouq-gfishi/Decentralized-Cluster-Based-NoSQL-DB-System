@@ -54,13 +54,15 @@ public class SecurityConfiguration {
     }
 
     public InMemoryUserDetailsManager addUserToMemory(com.atypon.nosql.affinitynode.user.User user) {
-        inMemoryUserDetailsManager.createUser(
-                User.builder()
-                        .username(user.getName())
-                        .password(user.getPassword())
-                        .roles(user.getRole())
-                        .build()
-        );
+        if (!inMemoryUserDetailsManager.userExists(user.getName())) {
+            inMemoryUserDetailsManager.createUser(
+                    User.builder()
+                            .username(user.getName())
+                            .password(user.getPassword())
+                            .roles(user.getRole())
+                            .build()
+            );
+        }
         return inMemoryUserDetailsManager;
     }
 }
