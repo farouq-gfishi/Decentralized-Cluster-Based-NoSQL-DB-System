@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/bootstrapping-node")
 public class BootstrappingNodeController {
 
-    BootstrappingNodeService bootstrappingNodeService;
+    private BootstrappingNodeService bootstrappingNodeService;
+    private boolean clusterStarted = false;
 
     @Autowired
     public BootstrappingNodeController(BootstrappingNodeService bootstrappingNodeService) {
@@ -21,6 +22,10 @@ public class BootstrappingNodeController {
 
     @GetMapping("/start-cluster")
     public ResponseEntity<String> startCluster() {
+        if(clusterStarted) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cluster has already been started.");
+        }
+        clusterStarted = true;
         bootstrappingNodeService.startCluster();
         return ResponseEntity.status(HttpStatus.OK).body("Users are successfully assigned to nodes.");
     }

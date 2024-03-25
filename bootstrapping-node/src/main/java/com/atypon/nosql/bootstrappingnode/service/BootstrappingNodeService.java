@@ -17,6 +17,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -45,10 +48,70 @@ public class BootstrappingNodeService {
 
     private void distributeUser() {
         List<User>users = getAllUsers();
-        for(User user:users) {
-            assignUserToNode(user, nodes.get(currentNodeIndex));
-            currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        for (User user : users) {
+            executorService.submit(() -> {
+                String selectedNode;
+                synchronized (this) {
+                    selectedNode = selectNodeForUser();
+                }
+                assignUserToNode(user, selectedNode);
+            });
         }
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        }
+    }
+
+    public List<User> getAllUsers() {
+        List<User> users = new ArrayList<>();
+        File directory = new File(DATABASE_FOLDER_PATH);
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                int numThreads = Runtime.getRuntime().availableProcessors();
+                ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+                for (File file : files) {
+                    if (file.isFile() && file.getName().endsWith(".json")) {
+                        executorService.submit(() -> {
+                            User user = parseUserFromJsonFile(file);
+                            if (user != null) {
+                                users.add(user);
+                            }
+                        });
+                    }
+                }
+                executorService.shutdown();
+                try {
+                    executorService.awaitTermination(2, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    e.printStackTrace();
+                }
+            }
+        }
+        return users;
+    }
+
+    private User parseUserFromJsonFile(File file) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(file, User.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String selectNodeForUser() {
+        String selectedNode = nodes.get(currentNodeIndex);
+        currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+        return selectedNode;
     }
 
     private void assignUserToNode(User user, String nodeUrl) {
@@ -74,7 +137,6 @@ public class BootstrappingNodeService {
         }
     }
 
-
     public ResponseEntity<String> addNewUser(User user) {
         try {
             user.setId(UUID.randomUUID().toString());
@@ -85,43 +147,18 @@ public class BootstrappingNodeService {
             String userJson = objectMapper.writeValueAsString(user);
             String filePath = DATABASE_FOLDER_PATH + "/user_" + user.getId() + ".json";
             Files.write(Paths.get(filePath), userJson.getBytes());
-            String nodeUrl = nodes.get(currentNodeIndex);
-            assignUserToNode(user, nodeUrl);
-            currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
-            return ResponseEntity.status(HttpStatus.OK).body(user.getName() + " assign to node: " + nodeUrl);
+            String selectedNode;
+            synchronized (this) {
+                selectedNode = selectNodeForUser();
+            }
+            assignUserToNode(user, selectedNode);
+            return ResponseEntity.status(HttpStatus.OK).body(user.getName() + " assign to node: " + selectedNode);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error in assign user to node: " + e.getMessage());
         }
     }
 
-    public List<User> getAllUsers() {
-        List<User> users = new ArrayList<>();
-        File directory = new File(DATABASE_FOLDER_PATH);
-        if (directory.exists() && directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith(".json")) {
-                        User user = parseUserFromJsonFile(file);
-                        if (user != null) {
-                            users.add(user);
-                        }
-                    }
-                }
-            }
-        }
-        return users;
-    }
 
-    private User parseUserFromJsonFile(File file) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(file, User.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
 }
 
