@@ -124,8 +124,6 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                 "Document '" + documentName + "' added successfully.");
     }
 
-
-
     @Override
     public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent) {
         String affinityNodeEndpoint = AFFINITY_NODE_URL + "/update/" + dbName + "/" + documentName + "/" + id;

@@ -22,8 +22,11 @@ public class SecurityConfiguration {
     @Value("${app.password}")
     private String password;
 
-    private final InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
+    private final InMemoryUserDetailsManager inMemoryUserDetailsManager;
 
+    public SecurityConfiguration() {
+        this.inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
+    }
     @Bean
     public InMemoryUserDetailsManager userDetailsManager() {
         inMemoryUserDetailsManager.createUser(

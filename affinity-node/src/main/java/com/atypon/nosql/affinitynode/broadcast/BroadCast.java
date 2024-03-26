@@ -8,19 +8,25 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class BroadCast {
 
-    private final String WORKER_NODE_1 = "http://node1:8080/broadcast";
-    private final String WORKER_NODE_2 = "http://node2:8080/broadcast";
-    private final String WORKER_NODE_3 = "http://node3:8080/broadcast";
+    private final String[] WORKER_NODES = {
+            "http://node1:8080/broadcast",
+            "http://node2:8080/broadcast",
+            "http://node3:8080/broadcast"
+    };
 
     @Value("${app.username}")
     private String username;
 
     @Value("${app.password}")
     private String password;
+
+    private ExecutorService executorService;
     private RestTemplate restTemplate;
     private HttpHeaders headers;
 
@@ -31,63 +37,75 @@ public class BroadCast {
     }
 
     public void createDB(String dbName) {
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/create-db";
-        sendRequest(WORKER_NODE_1 + endpoint, dbName);
-        sendRequest(WORKER_NODE_2 + endpoint, dbName);
-        sendRequest(WORKER_NODE_3 + endpoint, dbName);
+        executeTasks("/create-db", dbName);
     }
 
     public void addDocument(String dbName, String documentName, String documentContent, String uniqueId) {
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/add-document";
-        sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName, documentContent, uniqueId);
-        sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName, documentContent, uniqueId);
-        sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName, documentContent, uniqueId);
+        executeTasks("/add-document", dbName, documentName, documentContent, uniqueId);
     }
 
     public void updateDocument(String dbName, String documentName, String documentContent, String uniqueId) {
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/update-document";
-        sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName, documentContent, uniqueId);
-        sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName, documentContent, uniqueId);
-        sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName, documentContent, uniqueId);
+        executeTasks("/update-document", dbName, documentName, documentContent, uniqueId);
     }
 
     public void deleteDb(String dbName) {
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/delete-db";
-        sendRequest(WORKER_NODE_1 + endpoint, dbName);
-        sendRequest(WORKER_NODE_2 + endpoint, dbName);
-        sendRequest(WORKER_NODE_3 + endpoint, dbName);
+        executeTasks("/delete-db", dbName);
     }
 
     public void deleteDocument(String dbName, String documentName) {
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/delete-document";
-        sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName);
-        sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName);
-        sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName);
+        executeTasks("/delete-document", dbName, documentName);
     }
 
     public void deleteDocumentById(String dbName, String documentName, String id) {
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String endpoint = "/delete-document-by-id";
-        sendRequest(WORKER_NODE_1 + endpoint, dbName, documentName, id);
-        sendRequest(WORKER_NODE_2 + endpoint, dbName, documentName, id);
-        sendRequest(WORKER_NODE_3 + endpoint, dbName, documentName, id);
+        executeTasks("/delete-document-by-id", dbName, documentName, id);
     }
 
-    private void sendRequest(String endpoint, String dbName) {
+    private void executeTasks(String endpoint, Object... params) {
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        executorService = Executors.newFixedThreadPool(WORKER_NODES.length);
+        for (String workerNode : WORKER_NODES) {
+            Runnable task = () -> sendRequest(workerNode + endpoint, params);
+            executorService.submit(task);
+        }
+
+        executorService.shutdown();
+    }
+
+    private void sendRequest(String endpoint, Object... params) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(username, password);
-            HttpEntity<String> requestEntity = new HttpEntity<>(dbName, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, requestEntity, String.class);
-            if (response.getStatusCode() == HttpStatus.OK) {
-                System.out.println("Request successful to: " + endpoint);
+            String dbName = (String) params[0];
+            if (endpoint.endsWith("/create-db") || endpoint.endsWith("/delete-db")) {
+                Map<String, String> requestBody = new HashMap<>();
+                requestBody.put("dbName", dbName);
+                sendRequestWithBody(endpoint, headers, requestBody);
+            } else if (endpoint.endsWith("/add-document") || endpoint.endsWith("/update-document")) {
+                String documentName = (String) params[1];
+                String documentContent = (String) params[2];
+                String uniqueId = (String) params[3];
+                Map<String, String> requestBody = new HashMap<>();
+                requestBody.put("dbName", dbName);
+                requestBody.put("documentName", documentName);
+                requestBody.put("documentContent", documentContent);
+                requestBody.put("uniqueId", uniqueId);
+                sendRequestWithBody(endpoint, headers, requestBody);
+            } else if (endpoint.endsWith("/delete-document")) {
+                String documentName = (String) params[1];
+                Map<String, String> requestBody = new HashMap<>();
+                requestBody.put("dbName", dbName);
+                requestBody.put("documentName", documentName);
+                sendRequestWithBody(endpoint, headers, requestBody);
+            } else if (endpoint.endsWith("/delete-document-by-id")) {
+                String documentName = (String) params[1];
+                String id = (String) params[2];
+                Map<String, String> requestBody = new HashMap<>();
+                requestBody.put("dbName", dbName);
+                requestBody.put("documentName", documentName);
+                requestBody.put("id", id);
+                sendRequestWithBody(endpoint, headers, requestBody);
             } else {
-                System.err.println("Failed to send request to: " + endpoint);
+                System.err.println("Unsupported endpoint: " + endpoint);
             }
         } catch (Exception e) {
             System.err.println("Error sending request to: " + endpoint);
@@ -95,53 +113,8 @@ public class BroadCast {
         }
     }
 
-    private void sendRequest(String endpoint, String dbName, String documentName) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBasicAuth(username, password);
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("dbName", dbName);
-            requestBody.put("documentName", documentName);
-            printRequestStatus(endpoint, headers, requestBody);
-        } catch (Exception e) {
-            System.err.println("Error sending request to: " + endpoint);
-            e.printStackTrace();
-        }
-    }
-
-    private void sendRequest(String endpoint, String dbName, String documentName, String documentContent, String uniqueId) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBasicAuth(username, password);
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("dbName", dbName);
-            requestBody.put("documentName", documentName);
-            requestBody.put("uniqueId", uniqueId);
-            requestBody.put("documentContent", documentContent);
-            printRequestStatus(endpoint, headers, requestBody);
-        } catch (Exception e) {
-            System.err.println("Error sending request to: " + endpoint);
-            e.printStackTrace();
-        }
-    }
-
-    private void sendRequest(String endpoint, String dbName, String documentName, String id) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBasicAuth(username, password);
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("dbName", dbName);
-            requestBody.put("documentName", documentName);
-            requestBody.put("id", id);
-            printRequestStatus(endpoint, headers, requestBody);
-        } catch (Exception e) {
-            System.err.println("Error sending request to: " + endpoint);
-            e.printStackTrace();
-        }
-    }
-
-    private void printRequestStatus(String endpoint, HttpHeaders headers, Map<String, String> requestBody) {
-        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody,headers);
+    private void sendRequestWithBody(String endpoint, HttpHeaders headers, Map<String, String> requestBody) {
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> response = restTemplate.postForEntity(endpoint, requestEntity, String.class);
         if (response.getStatusCode() == HttpStatus.OK) {
             System.out.println("Request successful to: " + endpoint);

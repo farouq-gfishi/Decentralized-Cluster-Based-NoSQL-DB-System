@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class BootstrappingNodeService {
 
-    private static int currentNodeIndex = 0;
+    private int currentNodeIndex = 0;
     private final List<String> nodes = List.of(
             "http://node1:8080/user/assign-user",
             "http://node2:8080/user/assign-user",
@@ -157,8 +157,6 @@ public class BootstrappingNodeService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error in assign user to node: " + e.getMessage());
         }
     }
-
-
 
 }
 

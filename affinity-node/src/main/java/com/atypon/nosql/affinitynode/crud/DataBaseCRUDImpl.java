@@ -72,6 +72,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to create JSON object in document folder '" + documentName + "'.");
         }
     }
+
     private void helperAddDocument(String documentName, String dbName, String documentContent, String documentFolderPath) throws IOException {
         String uniqueId = UUID.randomUUID().toString();
         JsonNode jsonObject = objectMapper.readTree(documentContent);
@@ -113,9 +114,6 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> getDocument(String dbName, String documentName) {
-        if (dbName == null || dbName.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No database selected. Please use the '/use' endpoint to select a database first.");
-        }
         Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         if (index == null || index.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
