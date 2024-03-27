@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -134,7 +135,16 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     }
 
     @Override
-    public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent) {
+    public synchronized ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent, String currentContent) {
+        if(currentContent!=null) {
+            while (!currentContent.equals(hashDocumentContent(getDocument(dbName, documentName, id)))) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
         Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         if (index == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
@@ -162,6 +172,25 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
             }
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("JSON with ID '" + id + "' not found in document '" + documentName + "'.");
+    }
+    private String hashDocumentContent(String content) {
+        return Integer.toString(content.hashCode());
+    }
+    public String getDocument(String dbName, String documentName, String id) {
+        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
+        String fileName = index.get(id);
+        if (fileName != null) {
+            File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
+            if (jsonFile.exists()) {
+                try {
+                    String content = new String(Files.readAllBytes(Paths.get(jsonFile.getAbsolutePath())));
+                    return (content);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
     }
 
     @Override

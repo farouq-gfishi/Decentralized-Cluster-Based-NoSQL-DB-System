@@ -36,27 +36,27 @@ public class BroadCast {
         this.headers = headers;
     }
 
-    public void createDB(String dbName) {
+    public synchronized void createDB(String dbName) {
         executeTasks("/create-db", dbName);
     }
 
-    public void addDocument(String dbName, String documentName, String documentContent, String uniqueId) {
+    public synchronized void addDocument(String dbName, String documentName, String documentContent, String uniqueId) {
         executeTasks("/add-document", dbName, documentName, documentContent, uniqueId);
     }
 
-    public void updateDocument(String dbName, String documentName, String documentContent, String uniqueId) {
+    public synchronized void updateDocument(String dbName, String documentName, String documentContent, String uniqueId) {
         executeTasks("/update-document", dbName, documentName, documentContent, uniqueId);
     }
 
-    public void deleteDb(String dbName) {
+    public synchronized void deleteDb(String dbName) {
         executeTasks("/delete-db", dbName);
     }
 
-    public void deleteDocument(String dbName, String documentName) {
+    public synchronized void deleteDocument(String dbName, String documentName) {
         executeTasks("/delete-document", dbName, documentName);
     }
 
-    public void deleteDocumentById(String dbName, String documentName, String id) {
+    public synchronized void deleteDocumentById(String dbName, String documentName, String id) {
         executeTasks("/delete-document-by-id", dbName, documentName, id);
     }
 

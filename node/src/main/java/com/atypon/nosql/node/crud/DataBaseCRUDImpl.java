@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -126,10 +127,42 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent) {
+        String currentContent = hashDocumentContent(getDocument(dbName, documentName, id));
         String affinityNodeEndpoint = AFFINITY_NODE_URL + "/update/" + dbName + "/" + documentName + "/" + id;
-        return invokeAffinityNodeEndpoint(HttpMethod.PUT,
-                affinityNodeEndpoint, updatedContent,
-                "Document '" + documentName + "' updated successfully.");
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("currentContent", currentContent);
+        requestBody.put("updatedContent", updatedContent);
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(username, password);
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(affinityNodeEndpoint, HttpMethod.PUT, requestEntity, String.class);
+        if (responseEntity.getStatusCode() == HttpStatus.OK) {
+            return ResponseEntity.ok("updated");
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to invoke affinity-node endpoint: " + affinityNodeEndpoint);
+        }
+    }
+
+    private String hashDocumentContent(String content) {
+        return Integer.toString(content.hashCode());
+    }
+
+    public String getDocument(String dbName, String documentName, String id) {
+        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
+        String fileName = index.get(id);
+        if (fileName != null) {
+            File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
+            if (jsonFile.exists()) {
+                try {
+                    String content = new String(Files.readAllBytes(Paths.get(jsonFile.getAbsolutePath())));
+                    return (content);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
     }
 
     @Override

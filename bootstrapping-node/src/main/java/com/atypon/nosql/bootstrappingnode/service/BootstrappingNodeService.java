@@ -81,7 +81,9 @@ public class BootstrappingNodeService {
                         executorService.submit(() -> {
                             User user = parseUserFromJsonFile(file);
                             if (user != null) {
-                                users.add(user);
+                                synchronized (this) {
+                                    users.add(user);
+                                }
                             }
                         });
                     }

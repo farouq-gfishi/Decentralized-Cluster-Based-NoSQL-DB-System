@@ -100,7 +100,6 @@ public class BroadCast {
     public void deleteDb(@RequestBody Map<String,String> requestBody) {
         String dbName = requestBody.get("dbName");
         String dbFolderPath = DATABASE_FOLDER_PATH + dbName;
-        System.out.println(dbFolderPath);
         File dbFolder = new File(dbFolderPath);
         if (dbFolder.exists()) {
             File[] documentFolders = dbFolder.listFiles();

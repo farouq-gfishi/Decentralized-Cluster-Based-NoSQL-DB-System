@@ -56,28 +56,28 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ./bootstrapping-node/src/main/java/com/atypon/nosql/bootstrappingnode/DataBase
+      device: ./bootstrapping-node/DataBase
   affinity-node-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./affinity-node/src/main/java/com/atypon/nosql/affinitynode/DataBase
+      device: ./affinity-node/DataBase
   node1-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./node/src/main/java/com/atypon/nosql/node/DataBase/node1
+      device: ./node/DataBase/node1
   node2-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./node/src/main/java/com/atypon/nosql/node/DataBase/node2
+      device: ./node/DataBase/node2
   node3-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./node/src/main/java/com/atypon/nosql/node/DataBase/node3
+      device: ./node/DataBase/node3

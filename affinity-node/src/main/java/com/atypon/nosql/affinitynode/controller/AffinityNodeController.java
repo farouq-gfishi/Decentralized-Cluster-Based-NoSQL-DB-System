@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 public class AffinityNodeController {
@@ -45,8 +47,13 @@ public class AffinityNodeController {
     public ResponseEntity<String> updateDocumentById(@PathVariable String dbName,
                                                      @PathVariable String documentName,
                                                      @PathVariable String id,
-                                                     @RequestBody String updatedContent) {
-        return dataBaseCRUD.updateDocumentById(dbName, documentName, id, updatedContent);
+                                                     @RequestBody Map<String,String> requestBody) throws InterruptedException {
+        String updatedContent = requestBody.get("updatedContent");
+        String currentContent = null;
+        if(requestBody.containsKey("currentContent")) {
+            currentContent = requestBody.get("currentContent");
+        }
+        return dataBaseCRUD.updateDocumentById(dbName, documentName, id, updatedContent, currentContent);
     }
 
     @DeleteMapping("/delete-db/{dbName}")
