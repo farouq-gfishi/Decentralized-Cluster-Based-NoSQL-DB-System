@@ -7,10 +7,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +27,11 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
     private ObjectMapper objectMapper;
     private HashIndexing hashIndexing;
-    private BroadCast broadCast;
+    private BroadCast broadCast;@Value("${app.username}")
+    private String username;
+
+    @Value("${app.password}")
+    private String password;
 
     @Autowired
     public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing, BroadCast broadCast) {
@@ -135,13 +140,19 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     }
 
     @Override
-    public synchronized ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent, String currentContent) {
+    public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent, String currentContent, String nodeName) {
         if(currentContent!=null) {
-            while (!currentContent.equals(hashDocumentContent(getDocument(dbName, documentName, id)))) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+            if (!currentContent.equals(hashDocumentContent(getDocument(dbName, documentName, id)))) {
+                String affinityNodeEndpoint = "http://" + nodeName + ":8080/api" + "/update/" + dbName + "/" + documentName + "/" + id;
+                RestTemplate restTemplate = new RestTemplate();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setBasicAuth(username, password);
+                String requestBody = updatedContent;
+                HttpEntity<String> requestEntity = new HttpEntity<>(requestBody,headers);
+                System.out.println("Redirect to "+ nodeName +"::race condition");
+                ResponseEntity<String> responseEntity = restTemplate.exchange(affinityNodeEndpoint, HttpMethod.PUT, requestEntity, String.class);
+                if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                    return ResponseEntity.ok("Redirect::race condition");
                 }
             }
         }

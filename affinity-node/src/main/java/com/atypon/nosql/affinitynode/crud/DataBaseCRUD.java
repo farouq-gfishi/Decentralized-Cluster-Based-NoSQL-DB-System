@@ -12,7 +12,8 @@ public interface DataBaseCRUD {
 
     ResponseEntity<String> getDocument(String dbName, String documentName);
 
-    ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent, String currentContent) throws InterruptedException;
+    ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id,
+                                              String updatedContent, String currentContent, String nodeName) throws InterruptedException;
 
     ResponseEntity<String> deleteDB(String dbName) ;
 

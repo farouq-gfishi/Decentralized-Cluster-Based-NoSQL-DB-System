@@ -9,10 +9,9 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -132,6 +131,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("currentContent", currentContent);
         requestBody.put("updatedContent", updatedContent);
+        requestBody.put("nodeName", System.getenv("NODE_NAME"));
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(username, password);
