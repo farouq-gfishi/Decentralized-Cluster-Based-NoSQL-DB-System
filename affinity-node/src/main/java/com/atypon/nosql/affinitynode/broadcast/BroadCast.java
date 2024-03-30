@@ -14,18 +14,20 @@ import java.util.concurrent.Executors;
 @Service
 public class BroadCast {
 
-    private final String[] WORKER_NODES = {
-            "http://node1:8080/broadcast",
-            "http://node2:8080/broadcast",
-            "http://node3:8080/broadcast"
-    };
-
     @Value("${app.username}")
     private String username;
 
     @Value("${app.password}")
     private String password;
 
+    private final String[] WORKER_NODES = {
+            "http://node1:8080/broadcast",
+            "http://node2:8080/broadcast",
+            "http://node3:8080/broadcast",
+            "http://node4:8080/broadcast",
+            "http://affinity-node-1:8080/broadcast",
+            "http://affinity-node-2:8080/broadcast"
+    };
     private ExecutorService executorService;
     private RestTemplate restTemplate;
     private HttpHeaders headers;
@@ -36,27 +38,27 @@ public class BroadCast {
         this.headers = headers;
     }
 
-    public synchronized void createDB(String dbName) {
+    public void createDB(String dbName) {
         executeTasks("/create-db", dbName);
     }
 
-    public synchronized void addDocument(String dbName, String documentName, String documentContent, String uniqueId) {
+    public void addDocument(String dbName, String documentName, String documentContent, String uniqueId) {
         executeTasks("/add-document", dbName, documentName, documentContent, uniqueId);
     }
 
-    public synchronized void updateDocument(String dbName, String documentName, String documentContent, String uniqueId) {
+    public void updateDocument(String dbName, String documentName, String documentContent, String uniqueId) {
         executeTasks("/update-document", dbName, documentName, documentContent, uniqueId);
     }
 
-    public synchronized void deleteDb(String dbName) {
+    public void deleteDb(String dbName) {
         executeTasks("/delete-db", dbName);
     }
 
-    public synchronized void deleteDocument(String dbName, String documentName) {
+    public void deleteDocument(String dbName, String documentName) {
         executeTasks("/delete-document", dbName, documentName);
     }
 
-    public synchronized void deleteDocumentById(String dbName, String documentName, String id) {
+    public void deleteDocumentById(String dbName, String documentName, String id) {
         executeTasks("/delete-document-by-id", dbName, documentName, id);
     }
 

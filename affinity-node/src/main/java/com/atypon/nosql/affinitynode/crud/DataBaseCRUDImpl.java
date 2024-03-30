@@ -24,14 +24,17 @@ import java.util.UUID;
 
 @Service
 public class DataBaseCRUDImpl implements DataBaseCRUD {
-    private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
-    private ObjectMapper objectMapper;
-    private HashIndexing hashIndexing;
-    private BroadCast broadCast;@Value("${app.username}")
+
+    @Value("${app.username}")
     private String username;
 
     @Value("${app.password}")
     private String password;
+
+    private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
+    private ObjectMapper objectMapper;
+    private HashIndexing hashIndexing;
+    private BroadCast broadCast;
 
     @Autowired
     public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing, BroadCast broadCast) {
@@ -43,56 +46,15 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> createDB(String dbName) {
-        String dbFolderPath = DATABASE_FOLDER_PATH + dbName;
-        File dbFolder = new File(dbFolderPath);
-        if (!dbFolder.exists()) {
-            if (dbFolder.mkdir()) {
-                broadCast.createDB(dbName);
-                return ResponseEntity.status(HttpStatus.OK).body("Database '" + dbName + "' created successfully.");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to create database folder '" + dbName + "'.");
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Database '" + dbName + "' already exists.");
-        }
+        broadCast.createDB(dbName);
+        return ResponseEntity.status(HttpStatus.OK).body("Database '" + dbName + "' created successfully.");
     }
 
     @Override
     public ResponseEntity<String> addDocument(String documentName, String dbName, String documentContent) {
-        String documentFolderPath = DATABASE_FOLDER_PATH + dbName + "/" + documentName;
-        File documentFolder = new File(documentFolderPath);
-        try {
-            if (!documentFolder.exists()) {
-                if (documentFolder.mkdirs()) {
-                    helperAddDocument(documentName, dbName, documentContent, documentFolderPath);
-                    return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' added successfully.");
-                } else {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to create document folder '" + documentName + "'.");
-                }
-            } else {
-                helperAddDocument(documentName, dbName, documentContent, documentFolderPath);
-                return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' added successfully.");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to create JSON object in document folder '" + documentName + "'.");
-        }
-    }
-
-    private void helperAddDocument(String documentName, String dbName, String documentContent, String documentFolderPath) throws IOException {
         String uniqueId = UUID.randomUUID().toString();
-        JsonNode jsonObject = objectMapper.readTree(documentContent);
-        ((ObjectNode) jsonObject).put("id", uniqueId);
-        String updatedDocumentContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
-        String jsonFileName = documentName + "_" + uniqueId + ".json";
-        String jsonFilePath = documentFolderPath + "/" + jsonFileName;
-        Files.write(Paths.get(jsonFilePath), updatedDocumentContent.getBytes());
-        if (!hashIndexing.getIndexes().containsKey(dbName + "-" +documentName)) {
-            hashIndexing.createIndexMap(dbName,documentName);
-        }
-        hashIndexing.addToIndex(dbName, documentName, uniqueId, jsonFileName);
-        hashIndexing.persistIndexes();
         broadCast.addDocument(dbName, documentName, documentContent, uniqueId);
+        return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' added successfully.");
     }
 
     @Override
@@ -142,7 +104,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     @Override
     public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent, String currentContent, String nodeName) {
         if(currentContent!=null) {
-            if (!currentContent.equals(hashDocumentContent(getDocument(dbName, documentName, id)))) {
+            if (!currentContent.equals(Integer.toString(getDocument(dbName, documentName, id).hashCode()))) {
                 String affinityNodeEndpoint = "http://" + nodeName + ":8080/api" + "/update/" + dbName + "/" + documentName + "/" + id;
                 RestTemplate restTemplate = new RestTemplate();
                 HttpHeaders headers = new HttpHeaders();
@@ -156,37 +118,10 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
                 }
             }
         }
-        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
-        if (index == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
-        }
-        String fileName = index.get(id);
-        if (fileName != null) {
-            File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
-            if (jsonFile.exists()) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode jsonNode = null;
-                try {
-                    jsonNode = objectMapper.readTree(updatedContent);
-                    ((ObjectNode) jsonNode).put("id", id);
-                    String updatedJsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
-                    Files.write(jsonFile.toPath(), updatedJsonContent.getBytes());
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                broadCast.updateDocument(dbName, documentName, updatedContent, id);
-                return ResponseEntity.status(HttpStatus.OK).body("Document with ID '" + id + "' updated successfully for document '" + documentName + "'.");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("JSON file '" + fileName + "' not found for document '" + documentName + "'.");
-            }
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("JSON with ID '" + id + "' not found in document '" + documentName + "'.");
+        broadCast.updateDocument(dbName, documentName, updatedContent, id);
+        return ResponseEntity.status(HttpStatus.OK).body("Document with ID '" + id + "' updated successfully for document '" + documentName + "'.");
     }
-    private String hashDocumentContent(String content) {
-        return Integer.toString(content.hashCode());
-    }
+
     public String getDocument(String dbName, String documentName, String id) {
         Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         String fileName = index.get(id);
@@ -206,79 +141,19 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> deleteDB(String dbName) {
-        String dbFolderPath = DATABASE_FOLDER_PATH + dbName;
-        File dbFolder = new File(dbFolderPath);
-        if (dbFolder.exists()) {
-            File[] documentFolders = dbFolder.listFiles();
-            if (documentFolders != null) {
-                for (File documentFolder : documentFolders) {
-                    String documentName = documentFolder.getName();
-                    deleteDocument(dbName, documentName);
-                }
-            }
-            if (dbFolder.delete()) {
-                broadCast.deleteDb(dbName);
-                return ResponseEntity.status(HttpStatus.OK).body("Database '" + dbName + "' deleted successfully.");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to delete database folder '" + dbName + "'.");
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Database '" + dbName + "' does not exist.");
-        }
+        broadCast.deleteDb(dbName);
+        return ResponseEntity.status(HttpStatus.OK).body("Database '" + dbName + "' deleted successfully.");
     }
 
     @Override
     public ResponseEntity<String> deleteDocument(String dbName, String documentName) {
-        String documentFolderPath = DATABASE_FOLDER_PATH + dbName + "/" + documentName;
-        File documentFolder = new File(documentFolderPath);
-        if (documentFolder.exists()) {
-            if (deleteFolder(documentFolder)) {
-                hashIndexing.getIndexes().remove(dbName + "-" + documentName);
-                hashIndexing.persistIndexes();
-                broadCast.deleteDocument(dbName, documentName);
-                return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' deleted successfully.");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to delete document '" + documentName + "'.");
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
-        }
+        broadCast.deleteDocument(dbName, documentName);
+        return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' deleted successfully.");
     }
 
     @Override
     public ResponseEntity<String> deleteDocumentById(String dbName, String documentName, String id) {
-        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
-        if (index == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Document '" + documentName + "' not found.");
-        }
-        String fileName = index.get(id);
-        if (fileName != null) {
-            File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
-            if (jsonFile.exists()) {
-                if (jsonFile.delete()) {
-                    index.remove(id);
-                    hashIndexing.persistIndexes();
-                    broadCast.deleteDocumentById(dbName, documentName, id);
-                    return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' with ID '" + id + "' deleted successfully.");
-                } else {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete JSON file '" + fileName + "' for document '" + documentName + "'.");
-                }
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("JSON file '" + fileName + "' not found for document '" + documentName + "'.");
-            }
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("JSON with ID '" + id + "' not found in document '" + documentName + "'.");
-    }
-
-    private boolean deleteFolder(File folder) {
-        if (folder.isDirectory()) {
-            File[] files = folder.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    deleteFolder(file);
-                }
-            }
-        }
-        return folder.delete();
+        broadCast.deleteDocumentById(dbName, documentName, id);
+        return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' with ID '" + id + "' deleted successfully.");
     }
 }

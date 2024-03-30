@@ -43,16 +43,12 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(configurer ->
                 configurer
-                        .requestMatchers(HttpMethod.GET, "/api/get/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.GET, "/api/get-all/**").hasAnyRole("ADMIN","USER")
                         .requestMatchers(HttpMethod.POST, "/user/assign-user").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/broadcast/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/create-db/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.POST, "/api/add-document/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.PUT, "/api/update/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/delete-db/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/delete-document/**").hasAnyRole("ADMIN","USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/delete/**").hasAnyRole("ADMIN","USER")
+                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN","USER")
+                        .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN","USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("ADMIN","USER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN","USER")
         );
         http.httpBasic(Customizer.withDefaults());
         http.csrf(csrf -> csrf.disable());

@@ -18,20 +18,19 @@ import java.util.*;
 
 @Service
 public class DataBaseCRUDImpl implements DataBaseCRUD {
-    private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
-    private final String AFFINITY_NODE_URL = "http://affinity-node:8080/api";
 
     @Value("${app.username}")
     private String username;
 
     @Value("${app.password}")
     private String password;
-    private ObjectMapper objectMapper;
+
+    private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
+    private final String AFFINITY_NODE_URL = System.getenv("AFFINITY");
     private HashIndexing hashIndexing;
 
     @Autowired
-    public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing) {
-        this.objectMapper = objectMapper;
+    public DataBaseCRUDImpl(HashIndexing hashIndexing) {
         this.hashIndexing = hashIndexing;
         loadIndexesFromFile();
     }
@@ -118,6 +117,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> addDocument(String dbName, String documentName, String documentContent) {
+        System.out.println(AFFINITY_NODE_URL);
         String affinityNodeEndpoint = AFFINITY_NODE_URL + "/add-document/" + dbName + "/" + documentName;
         return invokeAffinityNodeEndpoint(HttpMethod.POST,
                 affinityNodeEndpoint, documentContent,
@@ -126,7 +126,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent) {
-        String currentContent = hashDocumentContent(getDocument(dbName, documentName, id));
+        String currentContent = Integer.toString(getDocument(dbName, documentName, id).hashCode());
         String affinityNodeEndpoint = AFFINITY_NODE_URL + "/update/" + dbName + "/" + documentName + "/" + id;
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("currentContent", currentContent);
@@ -138,14 +138,10 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> responseEntity = restTemplate.exchange(affinityNodeEndpoint, HttpMethod.PUT, requestEntity, String.class);
         if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            return ResponseEntity.ok("updated");
+            return ResponseEntity.status(HttpStatus.OK).body(documentName + " with id: " + id + " is updated");
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to invoke affinity-node endpoint: " + affinityNodeEndpoint);
         }
-    }
-
-    private String hashDocumentContent(String content) {
-        return Integer.toString(content.hashCode());
     }
 
     public String getDocument(String dbName, String documentName, String id) {

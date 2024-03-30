@@ -48,12 +48,12 @@ public class AffinityNodeController {
                                                      @PathVariable String documentName,
                                                      @PathVariable String id,
                                                      @RequestBody Map<String,String> requestBody) throws InterruptedException {
+        // TODO:
+        // solve the issue when call this endpoint
+        // the issue about the updated content is not injected when call it from postman
         String updatedContent = requestBody.get("updatedContent");
-        String nodeName = requestBody.get("nodeName");
-        String currentContent = null;
-        if(requestBody.containsKey("currentContent")) {
-            currentContent = requestBody.get("currentContent");
-        }
+        String nodeName = requestBody.get("nodeName");;
+        String currentContent = requestBody.get("currentContent");
         return dataBaseCRUD.updateDocumentById(dbName, documentName, id, updatedContent, currentContent, nodeName);
     }
 

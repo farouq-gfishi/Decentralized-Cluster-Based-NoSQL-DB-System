@@ -8,6 +8,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
       - NODE_NAME=node1
+      - AFFINITY=http://affinity-node-1:8080/api
     volumes:
       - node1-storage:/app/DataBase
 
@@ -19,6 +20,7 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
       - NODE_NAME=node2
+      - AFFINITY=http://affinity-node-1:8080/api
     volumes:
       - node2-storage:/app/DataBase
 
@@ -30,24 +32,47 @@ services:
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
       - NODE_NAME=node3
+      - AFFINITY=http://affinity-node-2:8080/api
     volumes:
       - node3-storage:/app/DataBase
 
-  affinity-node:
-    build: ./affinity-node
-    container_name: affinity-node
+  node4:
+    build: ./node
+    container_name: node-4
     ports:
       - "8084:8080"
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
+      - NODE_NAME=node4
+      - AFFINITY=http://affinity-node-2:8080/api
     volumes:
-      - affinity-node-storage:/app/DataBase
+      - node4-storage:/app/DataBase
+
+  affinity-node-1:
+    build: ./affinity-node
+    container_name: affinity-node-1
+    ports:
+      - "8085:8080"
+    environment:
+      - DATABASE_FOLDER_PATH=/app/DataBase
+    volumes:
+      - affinity-node1-storage:/app/DataBase
+
+  affinity-node-2:
+    build: ./affinity-node
+    container_name: affinity-node-2
+    ports:
+      - "8086:8080"
+    environment:
+      - DATABASE_FOLDER_PATH=/app/DataBase
+    volumes:
+      - affinity-node2-storage:/app/DataBase
 
   bootstrapping-node:
     build: ./bootstrapping-node
     container_name: bootstrapping-node
     ports:
-      - "8085:8080"
+      - "8087:8080"
     environment:
       - DATABASE_FOLDER_PATH=/app/DataBase
     volumes:
@@ -60,12 +85,18 @@ volumes:
       type: none
       o: bind
       device: ./bootstrapping-node/DataBase
-  affinity-node-storage:
+  affinity-node1-storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./affinity-node/DataBase
+      device: ./affinity-node/DataBase/affinity-node-1
+  affinity-node2-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./affinity-node/DataBase/affinity-node-2
   node1-storage:
     driver: local
     driver_opts:
@@ -84,3 +115,9 @@ volumes:
       type: none
       o: bind
       device: ./node/DataBase/node3
+  node4-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./node/DataBase/node4

@@ -30,7 +30,9 @@ public class BootstrappingNodeService {
             "http://node1:8080/user/assign-user",
             "http://node2:8080/user/assign-user",
             "http://node3:8080/user/assign-user",
-            "http://affinity-node:8080/user/assign-user"
+            "http://node4:8080/user/assign-user",
+            "http://affinity-node-1:8080/user/assign-user",
+            "http://affinity-node-2:8080/user/assign-user"
     );
 
     private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/user";

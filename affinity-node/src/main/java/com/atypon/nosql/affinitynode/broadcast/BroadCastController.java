@@ -1,12 +1,15 @@
-package com.atypon.nosql.node.broadcast;
+package com.atypon.nosql.affinitynode.broadcast;
 
-import com.atypon.nosql.node.indexing.HashIndexing;
+import com.atypon.nosql.affinitynode.indexing.HashIndexing;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,13 +20,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/broadcast")
-public class BroadCast {
+public class BroadCastController {
 
     private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
     private HashIndexing hashIndexing;
 
     @Autowired
-    public BroadCast(HashIndexing hashIndexing) {
+    public BroadCastController(HashIndexing hashIndexing) {
         this.hashIndexing = hashIndexing;
     }
 
@@ -161,3 +164,4 @@ public class BroadCast {
         return folder.delete();
     }
 }
+
