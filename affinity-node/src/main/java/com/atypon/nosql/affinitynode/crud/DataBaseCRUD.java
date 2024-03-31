@@ -2,6 +2,8 @@ package com.atypon.nosql.affinitynode.crud;
 
 import org.springframework.http.ResponseEntity;
 
+import java.util.Map;
+
 public interface DataBaseCRUD {
 
     ResponseEntity<String> createDB(String dbName);
@@ -13,7 +15,7 @@ public interface DataBaseCRUD {
     ResponseEntity<String> getDocument(String dbName, String documentName);
 
     ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id,
-                                              String updatedContent, String currentContent, String nodeName) throws InterruptedException;
+                                              Map<String,String> requestBody) throws InterruptedException;
 
     ResponseEntity<String> deleteDB(String dbName) ;
 

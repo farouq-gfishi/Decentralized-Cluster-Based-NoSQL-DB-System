@@ -102,41 +102,34 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     }
 
     @Override
-    public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, String updatedContent, String currentContent, String nodeName) {
-        if(currentContent!=null) {
-            if (!currentContent.equals(Integer.toString(getDocument(dbName, documentName, id).hashCode()))) {
+    public ResponseEntity<String> updateDocumentById(String dbName, String documentName, String id, Map<String,String> requestBody) {
+        String documentContent = null;
+        if(requestBody.containsKey("currentContent")) {
+            String nodeName = requestBody.get("nodeName");
+            String currentContent = requestBody.get("currentContent");
+            String updatedContent = requestBody.get("updatedContent");
+            if (!currentContent.equals(Integer.toString(getDocumentForUpdate(dbName, documentName, id).hashCode()))) {
                 String affinityNodeEndpoint = "http://" + nodeName + ":8080/api" + "/update/" + dbName + "/" + documentName + "/" + id;
                 RestTemplate restTemplate = new RestTemplate();
                 HttpHeaders headers = new HttpHeaders();
                 headers.setBasicAuth(username, password);
-                String requestBody = updatedContent;
-                HttpEntity<String> requestEntity = new HttpEntity<>(requestBody,headers);
-                System.out.println("Redirect to "+ nodeName +"::race condition");
+                HttpEntity<String> requestEntity = new HttpEntity<>(updatedContent, headers);
+                System.out.println("Redirect to " + nodeName + "::race condition");
                 ResponseEntity<String> responseEntity = restTemplate.exchange(affinityNodeEndpoint, HttpMethod.PUT, requestEntity, String.class);
                 if (responseEntity.getStatusCode() == HttpStatus.OK) {
                     return ResponseEntity.ok("Redirect::race condition");
                 }
             }
-        }
-        broadCast.updateDocument(dbName, documentName, updatedContent, id);
-        return ResponseEntity.status(HttpStatus.OK).body("Document with ID '" + id + "' updated successfully for document '" + documentName + "'.");
-    }
 
-    public String getDocument(String dbName, String documentName, String id) {
-        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
-        String fileName = index.get(id);
-        if (fileName != null) {
-            File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
-            if (jsonFile.exists()) {
-                try {
-                    String content = new String(Files.readAllBytes(Paths.get(jsonFile.getAbsolutePath())));
-                    return (content);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-        return null;
+        if(requestBody.containsKey("updatedContent")) {
+            documentContent = requestBody.get("updatedContent");
+        }
+        else {
+            documentContent = convertToJSONString(requestBody.toString());
+        }
+        broadCast.updateDocument(dbName, documentName, documentContent, id);
+        return ResponseEntity.status(HttpStatus.OK).body("Document with ID '" + id + "' updated successfully for document '" + documentName + "'.");
     }
 
     @Override
@@ -155,5 +148,27 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     public ResponseEntity<String> deleteDocumentById(String dbName, String documentName, String id) {
         broadCast.deleteDocumentById(dbName, documentName, id);
         return ResponseEntity.status(HttpStatus.OK).body("Document '" + documentName + "' with ID '" + id + "' deleted successfully.");
+    }
+
+    private String getDocumentForUpdate(String dbName, String documentName, String id) {
+        Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
+        String fileName = index.get(id);
+        if (fileName != null) {
+            File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
+            if (jsonFile.exists()) {
+                try {
+                    String content = new String(Files.readAllBytes(Paths.get(jsonFile.getAbsolutePath())));
+                    return (content);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String convertToJSONString(String content) {
+        String jsonString = content.replaceAll("\\{", "{\"").replaceAll(",\\s*(?!\\})", "\",\"").replaceAll("=", "\":\"").replaceAll("\\}", "\"}");
+        return jsonString;
     }
 }

@@ -117,7 +117,6 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
 
     @Override
     public ResponseEntity<String> addDocument(String dbName, String documentName, String documentContent) {
-        System.out.println(AFFINITY_NODE_URL);
         String affinityNodeEndpoint = AFFINITY_NODE_URL + "/add-document/" + dbName + "/" + documentName;
         return invokeAffinityNodeEndpoint(HttpMethod.POST,
                 affinityNodeEndpoint, documentContent,
