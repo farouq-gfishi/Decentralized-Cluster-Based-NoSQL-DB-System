@@ -19,7 +19,7 @@ import java.util.List;
 @Configuration
 public class SecurityConfiguration {
 
-    BootstrappingNodeService bootstrappingNodeService;
+    private BootstrappingNodeService bootstrappingNodeService;
 
     @Autowired
     public SecurityConfiguration(BootstrappingNodeService bootstrappingNodeService) {

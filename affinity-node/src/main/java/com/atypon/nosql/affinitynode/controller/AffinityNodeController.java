@@ -11,7 +11,7 @@ import java.util.Map;
 @RequestMapping("/api")
 public class AffinityNodeController {
 
-    DataBaseCRUD dataBaseCRUD;
+    private DataBaseCRUD dataBaseCRUD;
 
     @Autowired
     public AffinityNodeController(DataBaseCRUD dataBaseCRUD) {

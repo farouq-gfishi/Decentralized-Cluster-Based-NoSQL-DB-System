@@ -18,7 +18,7 @@ import java.io.IOException;
 @RequestMapping("/user")
 public class UserController {
 
-    private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
+    private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
 
     private SecurityConfiguration securityConfiguration;
 

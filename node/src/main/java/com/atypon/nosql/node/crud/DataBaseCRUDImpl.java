@@ -1,17 +1,13 @@
 package com.atypon.nosql.node.crud;
 
 import com.atypon.nosql.node.indexing.HashIndexing;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -143,7 +139,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
         }
     }
 
-    public String getDocument(String dbName, String documentName, String id) {
+    private String getDocument(String dbName, String documentName, String id) {
         Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         String fileName = index.get(id);
         if (fileName != null) {

@@ -19,7 +19,7 @@ import java.util.Map;
 @RequestMapping("/broadcast")
 public class BroadCast {
 
-    private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
+    private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
     private HashIndexing hashIndexing;
 
     @Autowired

@@ -82,7 +82,8 @@ public class BroadCast {
                 Map<String, String> requestBody = new HashMap<>();
                 requestBody.put("dbName", dbName);
                 sendRequestWithBody(endpoint, headers, requestBody);
-            } else if (endpoint.endsWith("/add-document") || endpoint.endsWith("/update-document")) {
+            }
+            else if (endpoint.endsWith("/add-document") || endpoint.endsWith("/update-document")) {
                 String documentName = (String) params[1];
                 String documentContent = (String) params[2];
                 String uniqueId = (String) params[3];
@@ -92,13 +93,15 @@ public class BroadCast {
                 requestBody.put("documentContent", documentContent);
                 requestBody.put("uniqueId", uniqueId);
                 sendRequestWithBody(endpoint, headers, requestBody);
-            } else if (endpoint.endsWith("/delete-document")) {
+            }
+            else if (endpoint.endsWith("/delete-document")) {
                 String documentName = (String) params[1];
                 Map<String, String> requestBody = new HashMap<>();
                 requestBody.put("dbName", dbName);
                 requestBody.put("documentName", documentName);
                 sendRequestWithBody(endpoint, headers, requestBody);
-            } else if (endpoint.endsWith("/delete-document-by-id")) {
+            }
+            else if (endpoint.endsWith("/delete-document-by-id")) {
                 String documentName = (String) params[1];
                 String id = (String) params[2];
                 Map<String, String> requestBody = new HashMap<>();
@@ -106,7 +109,8 @@ public class BroadCast {
                 requestBody.put("documentName", documentName);
                 requestBody.put("id", id);
                 sendRequestWithBody(endpoint, headers, requestBody);
-            } else {
+            }
+            else {
                 System.err.println("Unsupported endpoint: " + endpoint);
             }
         } catch (Exception e) {

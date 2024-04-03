@@ -25,6 +25,12 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class BootstrappingNodeService {
 
+    @Value("${app.username}")
+    private String username;
+
+    @Value("${app.password}")
+    private String password;
+
     private int currentNodeIndex = 0;
     private final List<String> nodes = List.of(
             "http://node1:8080/user/assign-user",
@@ -36,13 +42,6 @@ public class BootstrappingNodeService {
     );
 
     private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/user";
-
-    @Value("${app.username}")
-    private String username;
-
-    @Value("${app.password}")
-    private String password;
-
 
     public void startCluster() {
         distributeUser();

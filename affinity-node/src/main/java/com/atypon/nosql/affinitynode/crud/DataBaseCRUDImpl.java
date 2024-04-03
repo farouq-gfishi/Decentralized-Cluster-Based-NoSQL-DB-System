@@ -2,14 +2,10 @@ package com.atypon.nosql.affinitynode.crud;
 
 import com.atypon.nosql.affinitynode.broadcast.BroadCast;
 import com.atypon.nosql.affinitynode.indexing.HashIndexing;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,14 +27,12 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     @Value("${app.password}")
     private String password;
 
-    private static final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
-    private ObjectMapper objectMapper;
+    private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/";
     private HashIndexing hashIndexing;
     private BroadCast broadCast;
 
     @Autowired
-    public DataBaseCRUDImpl(ObjectMapper objectMapper, HashIndexing hashIndexing, BroadCast broadCast) {
-        this.objectMapper = objectMapper;
+    public DataBaseCRUDImpl(HashIndexing hashIndexing, BroadCast broadCast) {
         this.hashIndexing = hashIndexing;
         this.broadCast = broadCast;
         hashIndexing.loadIndexes();

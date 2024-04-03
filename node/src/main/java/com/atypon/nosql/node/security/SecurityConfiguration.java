@@ -1,7 +1,5 @@
 package com.atypon.nosql.node.security;
 
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +25,7 @@ public class SecurityConfiguration {
     public SecurityConfiguration() {
         this.inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
     }
+
     @Bean
     public InMemoryUserDetailsManager userDetailsManager() {
         inMemoryUserDetailsManager.createUser(
@@ -54,6 +53,7 @@ public class SecurityConfiguration {
         http.csrf(csrf -> csrf.disable());
         return http.build();
     }
+
     public InMemoryUserDetailsManager addUserToMemory(com.atypon.nosql.node.user.User user) {
         if (!inMemoryUserDetailsManager.userExists(user.getName())) {
             inMemoryUserDetailsManager.createUser(
