@@ -1,10 +1,7 @@
 package com.atypon.nosql.affinitynode.broadcast;
 
 import com.atypon.nosql.affinitynode.indexing.HashIndexing;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,12 +56,9 @@ public class BroadCastController {
             if (!documentFolder.exists()) {
                 documentFolder.mkdirs();
             }
-            ObjectMapper objectMapper = new ObjectMapper();
-            ObjectNode jsonObject = objectMapper.createObjectNode();
-            JsonNode contentNode = objectMapper.readTree(documentContent);
-            jsonObject.setAll((ObjectNode) contentNode);
+            JSONObject jsonObject = new JSONObject(documentContent);
             jsonObject.put("id", uniqueId);
-            String updatedDocumentContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+            String updatedDocumentContent = jsonObject.toString(4);
             Files.write(Paths.get(jsonFilePath), updatedDocumentContent.getBytes());
             if (!hashIndexing.getIndexes().containsKey(dbName + "-" +documentName)) {
                 hashIndexing.createIndexMap(dbName,documentName);
@@ -86,15 +80,11 @@ public class BroadCastController {
         Map<String, String> index = hashIndexing.getIndexes().get(dbName+"-"+documentName);
         String fileName = index.get(uniqueId);
         File jsonFile = new File(DATABASE_FOLDER_PATH + dbName + "/" + documentName + "/" + fileName);
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = null;
         try {
-            jsonNode = objectMapper.readTree(documentContent);
-            ((ObjectNode) jsonNode).put("id", uniqueId);
-            String updatedJsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+            JSONObject jsonObject = new JSONObject(documentContent);
+            jsonObject.put("id", uniqueId);
+            String updatedJsonContent = jsonObject.toString(4);
             Files.write(jsonFile.toPath(), updatedJsonContent.getBytes());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

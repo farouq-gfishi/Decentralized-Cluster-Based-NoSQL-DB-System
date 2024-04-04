@@ -1,6 +1,7 @@
 package com.atypon.nosql.node.crud;
 
 import com.atypon.nosql.node.indexing.HashIndexing;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -28,35 +29,7 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
     @Autowired
     public DataBaseCRUDImpl(HashIndexing hashIndexing) {
         this.hashIndexing = hashIndexing;
-        loadIndexesFromFile();
-    }
-
-    public void loadIndexesFromFile() {
-        try {
-            File indexFile = new File(DATABASE_FOLDER_PATH + "/index.txt");
-            if (!indexFile.exists()) {
-                if (indexFile.createNewFile()) {
-                    System.out.println("index.txt file created successfully.");
-                } else {
-                    System.err.println("Failed to create index.txt file.");
-                    return;
-                }
-            }
-            try (BufferedReader reader = new BufferedReader(new FileReader(indexFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",");
-                    String documentName = parts[0];
-                    String docId = parts[1];
-                    String fileName = parts[2];
-                    hashIndexing.getIndexes().computeIfAbsent(documentName, k -> new HashMap<>()).put(docId, fileName);
-                }
-            } catch (IOException e) {
-                System.err.println("Failed to load indexes from file: " + e.getMessage());
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to create index.txt file: " + e.getMessage());
-        }
+        hashIndexing.loadIndexes();
     }
 
     @Override

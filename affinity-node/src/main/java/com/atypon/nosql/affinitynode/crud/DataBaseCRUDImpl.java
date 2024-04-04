@@ -2,7 +2,6 @@ package com.atypon.nosql.affinitynode.crud;
 
 import com.atypon.nosql.affinitynode.broadcast.BroadCast;
 import com.atypon.nosql.affinitynode.indexing.HashIndexing;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
