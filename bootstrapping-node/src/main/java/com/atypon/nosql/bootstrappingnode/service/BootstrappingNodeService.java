@@ -30,8 +30,6 @@ public class BootstrappingNodeService {
 
     @Value("${app.password}")
     private String password;
-
-    private int currentNodeIndex = 0;
     private final List<String> nodes = List.of(
             "http://node1:8080/user/assign-user",
             "http://node2:8080/user/assign-user",
@@ -40,8 +38,18 @@ public class BootstrappingNodeService {
             "http://affinity-node-1:8080/user/assign-user",
             "http://affinity-node-2:8080/user/assign-user"
     );
-
     private final String DATABASE_FOLDER_PATH = System.getenv("DATABASE_FOLDER_PATH") + "/user";
+    private static BootstrappingNodeService bootstrappingNodeService;
+    private int currentNodeIndex = 0;
+
+    private BootstrappingNodeService(){}
+
+    public static synchronized BootstrappingNodeService getInstance() {
+        if (bootstrappingNodeService == null) {
+            bootstrappingNodeService = new BootstrappingNodeService();
+        }
+        return bootstrappingNodeService;
+    }
 
     public void startCluster() {
         distributeUser();
