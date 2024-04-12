@@ -101,16 +101,18 @@ public class DataBaseCRUDImpl implements DataBaseCRUD {
             String nodeName = requestBody.get("nodeName");
             String currentContent = requestBody.get("currentContent");
             String updatedContent = requestBody.get("updatedContent");
-            if (!currentContent.equals(Integer.toString(getDocumentForUpdate(dbName, documentName, id).hashCode()))) {
-                String affinityNodeEndpoint = "http://" + nodeName + ":8080/api" + "/update/" + dbName + "/" + documentName + "/" + id;
-                RestTemplate restTemplate = new RestTemplate();
-                HttpHeaders headers = new HttpHeaders();
-                headers.setBasicAuth(username, password);
-                HttpEntity<String> requestEntity = new HttpEntity<>(updatedContent, headers);
-                System.out.println("Redirect to " + nodeName + "::race condition");
-                ResponseEntity<String> responseEntity = restTemplate.exchange(affinityNodeEndpoint, HttpMethod.PUT, requestEntity, String.class);
-                if (responseEntity.getStatusCode() == HttpStatus.OK) {
-                    return ResponseEntity.ok("Redirect::race condition");
+            synchronized (this) {
+                if (!currentContent.equals(Integer.toString(getDocumentForUpdate(dbName, documentName, id).hashCode()))) {
+                    String affinityNodeEndpoint = "http://" + nodeName + ":8080/api" + "/update/" + dbName + "/" + documentName + "/" + id;
+                    RestTemplate restTemplate = new RestTemplate();
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setBasicAuth(username, password);
+                    HttpEntity<String> requestEntity = new HttpEntity<>(updatedContent, headers);
+                    System.out.println("Redirect to " + nodeName + "::race condition");
+                    ResponseEntity<String> responseEntity = restTemplate.exchange(affinityNodeEndpoint, HttpMethod.PUT, requestEntity, String.class);
+                    if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                        return ResponseEntity.ok("Redirect::race condition");
+                    }
                 }
             }
 
