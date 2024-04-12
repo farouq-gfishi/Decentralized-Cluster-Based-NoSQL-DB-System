@@ -23,18 +23,24 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         
-    - name: Build nodes & push to docker hub
+    - name: Build worker node & push to docker hub
       run: |
         cd node
         mvn clean install
         docker build -t docker.io/farooqtahsin/node -f Dockerfile .
         docker push docker.io/farooqtahsin/node
         cd ..
+        
+    - name: Build affinity node & push to docker hub
+      run: |
         cd affinity-node
         mvn clean install
         docker build -t docker.io/farooqtahsin/affinity-node -f Dockerfile .
         docker push docker.io/farooqtahsin/affinity-node
         cd ..
+        
+    - name: Build bootstrapping node & push to docker hub
+      run: |
         cd bootstrapping-node
         mvn clean install
         docker build -t docker.io/farooqtahsin/bootstrapping-node -f Dockerfile .
