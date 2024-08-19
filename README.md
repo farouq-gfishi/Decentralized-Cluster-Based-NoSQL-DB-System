@@ -28,8 +28,7 @@ The Decentralized Cluster-Based NoSQL Database System is designed to facilitate 
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/your-repository.git
-cd your-repository
+git clone https://github.com/farouq-gfishi/Decentralized-Cluster-Based-NoSQL-DB-System.git
 ```
 
 ### Build the Project
@@ -58,5 +57,4 @@ mvn test
 
 ## Configuration
 
-Contributions are welcome! Please open issues for any bugs or feature requests, and submit pull requests with your changes. Ensure that all new code is covered by unit tests and adheres to the project's coding standards.
-
+Configuration settings for the application are managed through environment variables and configuration files. Refer to the docker-compose.yml and application.properties files for detailed configuration options.
